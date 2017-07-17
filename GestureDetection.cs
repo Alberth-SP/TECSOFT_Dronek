@@ -3,16 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Windows;
-using System.Net;
-//MQTT
-using uPLibrary.Networking.M2Mqtt;
-using uPLibrary.Networking.M2Mqtt.Messages;
 
-
-namespace Kindrone
+namespace DRONEK
 {
-   
     public enum HandPosition { Unknown, Up, Center, Down, Left, Right, Backwards, Forwards }
 
     public class HandPositionChangedArgs
@@ -28,7 +21,6 @@ namespace Kindrone
         {
             ProcessRightHand(skeleton);
             ProcessLeftHand(skeleton);
-            
         }
 
         // Right Hand
@@ -68,15 +60,15 @@ namespace Kindrone
                 // Up/Down
                 if (rightHandPoint.Y - rightShoulderPoint.Y > 0.2)
                 {
-                    newRightHandUpDownPosition = HandPosition.Up; 
+                    newRightHandUpDownPosition = HandPosition.Up;
                 }
                 else if (Math.Abs(rightHandPoint.Y - rightShoulderPoint.Y) > 0.2)
                 {
-                    newRightHandUpDownPosition = HandPosition.Down; 
+                    newRightHandUpDownPosition = HandPosition.Down;
                 }
                 else
                 {
-                    newRightHandUpDownPosition = HandPosition.Center; 
+                    newRightHandUpDownPosition = HandPosition.Center;
                 }
 
                 // Left/Right

@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Kindrone
+namespace DRONEK
 {
     using System.IO;
     using System.Windows;
@@ -174,7 +174,7 @@ namespace Kindrone
 
             if (null == this.sensor)
             {
-                CommandTextBlock.Text = "Connect Kinect before sending commands!";
+                CommandTextBlock.Text = "Conectando Kinect antes de enviar comandos!!!!";
 
                 StartButton.IsEnabled = false;
                 EmergencyButton.IsEnabled = false;
@@ -421,13 +421,13 @@ namespace Kindrone
         private void EmergencyButton_Click(object sender, RoutedEventArgs e)
         {
             droneController.Emergency();
-            CommandTextBlock.Text = "Emergency";
+            CommandTextBlock.Text = "Emergencia";
         }
 
         private void ResetEmergencyButton_Click(object sender, RoutedEventArgs e)
         {
             droneController.ResetEmergency();
-            CommandTextBlock.Text = "Reset Emergency";
+            CommandTextBlock.Text = "Reset Emergencia";
         }
 
         private void StartButton_Click(object sender, RoutedEventArgs e)
@@ -437,7 +437,7 @@ namespace Kindrone
             StartButton.IsEnabled = false;
             StopButton.IsEnabled = true;
             HoverButton.IsEnabled = true;
-            CommandTextBlock.Text = "Starting";
+            CommandTextBlock.Text = "Iniciar";
         }
 
         private void StopButton_Click(object sender, RoutedEventArgs e)
@@ -447,7 +447,7 @@ namespace Kindrone
             StartButton.IsEnabled = true;
             StopButton.IsEnabled = false;
             HoverButton.IsEnabled = false;
-            CommandTextBlock.Text = "Stopping";
+            CommandTextBlock.Text = "Detener";
         }
 
         private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)

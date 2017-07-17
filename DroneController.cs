@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using uPLibrary.Networking.M2Mqtt;
 using uPLibrary.Networking.M2Mqtt.Messages;
 
-namespace Kindrone
+namespace DRONEK
 {
     class DroneController
     {
@@ -26,7 +26,8 @@ namespace Kindrone
 
         private DroneClient _client;
         private MqttClient client;
-        public int speed;
+        public int contadorAtras;
+        public int contadorAdelante;
         public bool enable = false;
 
         public DroneController()
@@ -46,6 +47,8 @@ namespace Kindrone
             _client.Start();
             _client.FlatTrim();
             enable = true;
+            contadorAdelante = 0;
+            contadorAtras = 0;
         }
 
         public void Stop()
@@ -53,6 +56,8 @@ namespace Kindrone
             _client.Stop();
             enable = false;
             client.Publish("motor", Encoding.UTF8.GetBytes("0"), 0, false);
+            contadorAdelante = 0;
+            contadorAtras = 0;
         }
 
         public void Hover()
@@ -92,11 +97,11 @@ namespace Kindrone
                 case HandPosition.Backwards:
                     if (_client.NavigationData.State == (NavigationState.Landed | NavigationState.Command))
                         _client.FlatTrim();
-                        DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "NULL " });
+                        DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "-" });
                     break;
                 case HandPosition.Forwards:
                     _client.Hover();
-                    DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "NULL" });
+                    DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "-" });
                     break;
             }
         }
@@ -110,12 +115,14 @@ namespace Kindrone
                 case HandPosition.Backwards:
                     _client.Progress(FlightMode.Progressive, pitch: 0.05f);
                     DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "Ir hacia atras" });
-                    if(enable)client.Publish("motor", Encoding.UTF8.GetBytes("9"), 0, false);
+                    contadorAtras++;
+                    if(enable&&contadorAtras>3){contadorAdelante=0;client.Publish("motor", Encoding.UTF8.GetBytes("9"), 0, false);}//9
                     break;
                 case HandPosition.Forwards:
                     _client.Progress(FlightMode.Progressive, pitch: -0.05f);
                     DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "ir hacia adelante" });
-                    if (enable) client.Publish("motor", Encoding.UTF8.GetBytes("8"), 0, false);
+                    contadorAdelante++;
+                    if (enable&&contadorAdelante>1) {contadorAtras=0;client.Publish("motor", Encoding.UTF8.GetBytes("8"), 0, false);}//8
                     break;
             }
         }
@@ -129,12 +136,12 @@ namespace Kindrone
                 case HandPosition.Left:
                     _client.Progress(FlightMode.Progressive, roll: -0.05f);
                     DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "Ir hacia la izquierda" });
-                    if (enable) client.Publish("motor", Encoding.UTF8.GetBytes("7"), 0, false);
+                    if (enable) {contadorAdelante=0;contadorAtras=0;client.Publish("motor", Encoding.UTF8.GetBytes("7"), 0, false);}//7
                     break;
                 case HandPosition.Right:
                     _client.Progress(FlightMode.Progressive, roll: 0.05f);
                     DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "Ir hacia la derecha" });
-                    if (enable) client.Publish("motor", Encoding.UTF8.GetBytes("6"), 0, false);
+                    if (enable) {contadorAdelante=0;contadorAtras=0;client.Publish("motor", Encoding.UTF8.GetBytes("6"), 0, false);}//6
                     break;
             }
         }
@@ -147,11 +154,11 @@ namespace Kindrone
                     break;
                 case HandPosition.Left:
                     _client.Progress(FlightMode.Progressive, yaw: 0.25f);
-                    DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "NULL" });
+                    DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "-" });
                     break;
                 case HandPosition.Right:
                     _client.Progress(FlightMode.Progressive, yaw: -0.25f);
-                    DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "NULL" });
+                    DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "-" });
                     break;
             }
         }
@@ -162,15 +169,15 @@ namespace Kindrone
             {
                 case HandPosition.Up:
                     _client.Progress(FlightMode.Progressive, gaz: 0.25f);
-                    DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "NULL" });
-                    if (enable) client.Publish("motor", Encoding.UTF8.GetBytes("arriba"), 0, false);
+                    DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "-" });
+                    //if (enable) client.Publish("motor", Encoding.UTF8.GetBytes("arriba"), 0, false);
                     break;
                 case HandPosition.Center:
                     break;
                 case HandPosition.Down:
                     _client.Progress(FlightMode.Progressive, gaz: -0.25f);
-                    DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "NULL" });
-                    if (enable) client.Publish("motor", Encoding.UTF8.GetBytes("abajo"), 0, false);
+                    DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "-" });
+                    //if (enable) client.Publish("motor", Encoding.UTF8.GetBytes("abajo"), 0, false);
                     break;
             }
         }
@@ -183,7 +190,7 @@ namespace Kindrone
                     _client.Takeoff();
                     DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "Elevarse" });
                     //if (speed < 5) speed++;
-                    if (enable) client.Publish("motor", Encoding.UTF8.GetBytes("1"), 0, false);
+                    if (enable) {contadorAdelante=0;contadorAtras=0;client.Publish("motor", Encoding.UTF8.GetBytes("1"), 0, false);}//1
                     break;
                 case HandPosition.Center:
                     break;
@@ -191,7 +198,7 @@ namespace Kindrone
                     _client.Land();
                     DroneCommandChanged(_client, new DroneCommandChangedEventArgs { CommandText = "Descender" });
                     //if (speed < 5) speed--;
-                    if (enable) client.Publish("motor", Encoding.UTF8.GetBytes("0"), 0, false);
+                    if (enable) {contadorAdelante=0;contadorAtras=0;client.Publish("motor", Encoding.UTF8.GetBytes("0"), 0, false);}//0
                     break;
             }
         }
