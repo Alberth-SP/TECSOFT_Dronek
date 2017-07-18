@@ -24,7 +24,7 @@ int value = 0;
 *************************/
 static uint16_t unThrottleIn;
 
-#define OUTPUT_LIMITS 30
+#define OUTPUT_LIMITS 50
 ///////////////////////CARIABLES DE MOTORES//////////////////
 int outputTL, outputTR, outputBR, outputBL, auxTL, auxTR, auxBR, auxBL;
 int mpuYaw, mpuPitch, mpuRoll;
@@ -33,16 +33,17 @@ int motorGain = 35;
 double pitchSetpoint, pitchInput, pitchOutput;
 double rollSetpoint, rollInput, rollOutput;
 //////////////////////////TUNING DEL PID/////////////////////
-double PitchaggKp=.40, PitchaggKi=0.02, PitchaggKd=.9;
+double PitchaggKp=.80, PitchaggKi=0, PitchaggKd=0;
 double PitchconsKp=.53, PitchconsKi=0.02, PitchconsKd=0.12;
 
-double RollaggKp=.40, RollaggKi=0.02, RollaggKd=.9;
+double RollaggKp=.80, RollaggKi=0.00, RollaggKd=0;
 double RollconsKp=.53, RollconsKi=0.02, RollconsKd=0.12;
 //Specify the links and initial tuning parameters
 PID pitchPID(&pitchInput, &pitchOutput, &pitchSetpoint, PitchconsKp, PitchconsKi, PitchconsKd, DIRECT);
 PID rollPID(&rollInput, &rollOutput, &rollSetpoint, RollconsKp, RollconsKi, RollconsKd, DIRECT);
 
-
+long previousMillis = 0;
+int derecha = 0; int izquierda = 0; int arriba = 0; int abajo = 0; 
 //////////////////////definiciones y servos MPU////////////////////////
       MPU6050 mpu;////////definicion del MPU
       /////VARIABLES DEL MPU/////////////////////////////////////
@@ -89,7 +90,7 @@ Servo servoMotorBL;
 
 
 void setup() {
-
+derecha = 0; izquierda = 0; arriba = 0; abajo = 0; 
 pitchInput = 0;
 rollInput = 0;
 ///////////////////////CONFIGURAICON BASICA DEL PID//////////////////////////////
@@ -140,7 +141,7 @@ servoMotorBR.attach(MOTORBR_OUT_PIN);
                             int cortarPayload(String mensaje){
                               String mensajerecortado=mensaje.substring(0,4);
                               int velocidad = mensajerecortado.toInt();
-                              if ((velocidad>=1000) && (velocidad<=1400)){
+                              if ((velocidad>=1000) && (velocidad<=1550)){
                                 return velocidad;
                               }
                               else return 1000;
@@ -149,10 +150,17 @@ servoMotorBR.attach(MOTORBR_OUT_PIN);
   void callback(char* topic, byte* payload, unsigned int length) 
   {
       Serial.print("Command from MQTT broker is : [");
-      Serial.print(topic);Serial.println("]: ");
-      String strPayload = String((char*)payload);
-      unThrottleIn= cortarPayload(strPayload);
-      Serial.print("MSG: ");Serial.println(unThrottleIn);
+      Serial.print(topic);
+      int p =(char)payload[0]-'0';
+      if(p==0){unThrottleIn=1000;}
+      if(p==1){unThrottleIn=1280;}
+      if(p==2){unThrottleIn=1350;}
+      if(p==3){unThrottleIn=1400;}
+      if(p==4){unThrottleIn=1450;}
+      if(p==7){izquierda=90;}
+      if(p==6){derecha=90;}
+      if(p==9){abajo=90;}
+      if(p==8){arriba=90;}
   } 
 // ///CALLBACK
 
@@ -199,11 +207,11 @@ void loop() {
             //pitchInput = map(unPitchIn, 900, 2000, -30, 30); // Valor de entrada (necesita convertirse a grados)
             //double Pitchgap = abs(pitchSetpoint-pitchInput); // Distancia hasta setpoint (Error)
             //if(Pitchgap<5) {  // Estamos lejos del setpoint, usar parametros conservativos
-                pitchPID.SetTunings(PitchconsKp, PitchconsKi, PitchconsKd);
+                //pitchPID.SetTunings(PitchconsKp, PitchconsKi, PitchconsKd);
                 if(pitchOutput>=max_pitch||max_pitch==30)max_pitch=pitchOutput;
             //} else {
               // Estamos muy cerca del setpoint, usa parametros agresivos
-              //pitchPID.SetTunings(PitchaggKp, PitchaggKi, PitchaggKd);
+              pitchPID.SetTunings(PitchaggKp, PitchaggKi, PitchaggKd);
             //}
             pitchPID.Compute();
 /////////////////////////////////////////PID ROLL//////////////////////////////////////////////////////////////////          
@@ -211,11 +219,11 @@ void loop() {
             //rollInput = map(unRollIn, 900, 2000, -30, 30); // Valor de entrada (necesita convertirse a grados)
             //double Rollgap = abs(rollSetpoint-rollInput); // Distancia hasta setpoint (Error)
             //if(Rollgap<5) {  // Estamos lejos del setpoint, usar parametros conservativos
-                rollPID.SetTunings(RollconsKp, RollconsKi, RollconsKd);
+                //rollPID.SetTunings(RollconsKp, RollconsKi, RollconsKd);
                 if(rollOutput>=max_roll||max_roll==30)max_roll=rollOutput;
             //} else {
               // Estamos muy cerca del setpoint, usa parametros agresivos
-              //rollPID.SetTunings(RollaggKp, RollaggKi, RollaggKd);
+              rollPID.SetTunings(RollaggKp, RollaggKi, RollaggKd);
             //}
             rollPID.Compute();
 
@@ -226,6 +234,7 @@ void loop() {
           Serial.print("ROLL INPUT: ");Serial.print(rollInput);
             //Serial.print("->MAXPITCH: ");Serial.println(max_roll);
             //Serial.print("->ROLL OUTPUT: ");Serial.println(rollOutput);
+    
     if(true) {
           //Serial.println("///////////////////////////////////////////////////////////////////////////");
           /*outputTR = unThrottleIn;
@@ -233,7 +242,7 @@ void loop() {
           outputBL = unThrottleIn;
           outputBR = unThrottleIn;*/
         /////////////////////////////////ESTABILIZADOR/////////////////////////////////////
-         if(mpuPitch > 0) {//enciendeizquierda          
+          if(mpuPitch > 0) {//enciendeizquierda          
             outputBR = unThrottleIn + rollOutput; outputTR = unThrottleIn - rollOutput;
             outputBL = unThrottleIn + rollOutput; outputTL = unThrottleIn - rollOutput;
           }
@@ -257,6 +266,44 @@ void loop() {
           else{//enciendetodo
             outputBR = outputBR ; outputTR = outputTR ;
             outputBL = outputBL ; outputTL = outputTL ;
+          }
+          ////////////////////////VIRAR//////////////////////////
+                unsigned long currentMillis = millis();      
+                if(currentMillis - previousMillis > 3000) {
+                        previousMillis = currentMillis;
+                        if(derecha==90){
+                          derecha=0; 
+                        }
+                        if(izquierda==90){
+                          izquierda=0;  
+                        }
+                        if(arriba==90){
+                          arriba=0;  
+                        }
+                        if(abajo==90){
+                          abajo=0;  
+                        }
+                  }
+ 
+    /////////////////////////////////////////////////////////
+            /*outputBR = unThrottleIn ; outputTR = unThrottleIn ;
+            outputBL = unThrottleIn ; outputTL = unThrottleIn ;*/
+          if(derecha==90){
+            outputTR+=derecha;
+            outputTL+=derecha; 
+          }
+          if(izquierda==90){
+            outputBR+=izquierda;
+            outputBL+=izquierda; 
+          }
+          if(arriba==90){
+            outputTR+=arriba;
+            outputBR+=arriba;
+          }
+          if(abajo==90){
+            outputTL+=abajo;
+            outputBL+=abajo; 
+            
           }
           /*if(mpuRoll > 0) {          
             outputBR = unThrottleIn + pitchOutput; outputTR = unThrottleIn - pitchOutput;
@@ -318,6 +365,9 @@ void loop() {
 
 
 ////////////////////////////////////FUNCIONES DE LOS MOTORES////////////////////////////////////
+void virar(){
+  
+}
 void arm() {
   servoMotorTL.writeMicroseconds(1000);
   servoMotorTR.writeMicroseconds(1000);
